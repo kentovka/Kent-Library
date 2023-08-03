@@ -118,12 +118,9 @@ local function run(eventName, ...)
         end
     end
     
-    local gm = GAMEMODE
-    if gm then
-        local gmFunc = gm[eventName]
-        if gmFunc then
-            return gmFunc(...)
-        end
+    local gmFunc = GAMEMODE[eventName]
+    if gmFunc then
+        return gmFunc(...)
     end
 end
 
