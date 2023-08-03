@@ -18,6 +18,8 @@ local originalHooks = {}
 local hook = {}
 local hooks = {}
 
+local funcGM = GM or GAMEMODE
+
 local function createFunc(eventTable, name)
 	local tab = {}
 	local len = 0
@@ -29,26 +31,53 @@ local function createFunc(eventTable, name)
 		end
 	end	
 
-	local a, b, c, d, e, f
 
-	local gmFunc = (GM or GAMEMODE)[name]
+	local gmFunc = (funcGM)[name]
 
-	return function(...)
-		for i = 1, len do
-			a, b, c, d, e, f = tab[i](...)
+	if gmFunc then
+		return function(...)
+			for i = 1, len do
+				local a, b, c, d, e, f = tab[i](...)
 
-			if a ~= nil then
-				return a, b, c, d, e, f
+				if a ~= nil then
+					return a, b, c, d, e, f
+				end
 			end
-		end
 
 
-		if gmFunc then
 			return gmFunc(funcGM, ...)
+		end
+	else
+		return function(...)
+			for i = 1, len do
+				local a, b, c, d, e, f = tab[i](...)
+
+				if a ~= nil then
+					return a, b, c, d, e, f
+				end
+			end
 		end
 	end
 end
 
+local function createSingleFunc(eventTable, name)
+	local _, func = next(eventTable, 0)
+	local gmFunc = (funcGM)[name]
+
+	if gmFunc then
+		return function(...)
+			local a, b, c, d, e, f = func(...)
+
+			if a == nil then
+				return gmFunc(funcGM, ...)
+			end
+			
+			return a, b, c, d, e, f
+		end
+	else
+		return func
+	end
+end
 
 local function createRecursedFunc(eventTable, name)
 	local tab = {}
@@ -61,27 +90,28 @@ local function createRecursedFunc(eventTable, name)
 		end
 	end
 
-	local newFunc = (GM or GAMEMODE)[name]
+	local newFunc = (funcGM)[name]
 	local start = 1
 	if newFunc == nil then
 		newFunc = tab[1]
 		start = 2
 	end
 
-	local a, b, c, d, e, f
+
 
 	for i = start, len do
 		local oldFunc = newFunc
 		local func = tab[i]
 
 		newFunc = function(...)
-			a, b, c, d, e, f = func(...)
+			
+			local a, b, c, d, e, f = func(...)
 
-			if a == nil then
-				a, b, c, d, e, f = oldFunc(...)
+			if a ~= nil then
+				return a, b, c, d, e, f
 			end
 
-			return a, b, c, d, e, f
+			return oldFunc(...)
 		end
 	end
 
@@ -89,7 +119,7 @@ local function createRecursedFunc(eventTable, name)
 end
 
 local function setHookFuncion(eventName, eventTable)
-	hooks[eventName] = (eventTable[0] <= 5 and createRecursedFunc or createFunc)(eventTable, eventName)
+	hooks[eventName] = (eventTable[0] == 1 and createSingleFunc or eventTable[0] <= 5 and createRecursedFunc or createFunc)(eventTable, eventName)
 end
 
 function hook.GetTable()
@@ -129,4 +159,4 @@ function hook.Call(eventName, gm, ...)
 	end
 end
 
-_G['hook'] = hook
+_G['hook2'] = hook
