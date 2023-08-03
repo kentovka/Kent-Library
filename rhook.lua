@@ -110,7 +110,21 @@ local function call(eventName, gmTable, ...)
 end
 
 local function run(eventName, ...)
-    return call(eventName, GM or GAMEMODE, ...)
+    local curEventHooks = hooks[eventName]
+    if curEventHooks then
+        local r1, r2, r3, r4, r5, r6 = curEventHooks(...)
+        if r1 ~= nil then
+            return r1, r2, r3, r4, r5, r6
+        end
+    end
+    
+    local gm = GAMEMODE
+    if gm then
+        local gmFunc = gm[eventName]
+        if gmFunc then
+            return gmFunc(...)
+        end
+    end
 end
 
 local function getTable()
