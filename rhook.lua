@@ -31,26 +31,6 @@ local function attachFunctionToEvent(eventName, func)
     end
 end
 
-local function add(eventName, hookName, func)
-    attachFunctionToEvent(eventName, func)
-
-    local curFunctions = hooksNormalTable[eventName]
-    if curFunctions then
-        local newInsertionsAmount = curFunctions[0] + 1
-        curFunctions[0] = newInsertionsAmount
-        curFunctions[hookName] = {newInsertionsAmount, func}
-    else
-        hooksNormalTable[eventName] = {
-            -- insertion amount. Using this we can keep the order the hooks being added
-            [0] = 1,
-            [hookName] = {
-                -- order
-                1,
-                func}
-        }
-    end
-end
-
 local function rebuildEventFunctions(eventName)
     hooks[eventName] = nil
     local curOriginals = hooksNormalTable[eventName]
@@ -77,6 +57,26 @@ local function remove(eventName, hookName)
     end
 
     -- nothing to remove in the other case
+end
+
+local function add(eventName, hookName, func)
+    attachFunctionToEvent(eventName, func)
+
+    local curFunctions = hooksNormalTable[eventName]
+    if curFunctions then
+        local newInsertionsAmount = curFunctions[0] + 1
+        curFunctions[0] = newInsertionsAmount
+        curFunctions[hookName] = {newInsertionsAmount, func}
+    else
+        hooksNormalTable[eventName] = {
+            -- insertion amount. Using this we can keep the order the hooks being added
+            [0] = 1,
+            [hookName] = {
+                -- order
+                1,
+                func}
+        }
+    end
 end
 
 local function call(eventName, gmTable, ...)
