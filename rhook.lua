@@ -82,7 +82,7 @@ end
 local function call(eventName, gmTable, ...)
     local curEventHooks = hooks[eventName]
     if curEventHooks then
-        r1, r2, r3, r4, r5, r6 = curEventHooks(...)
+        local r1, r2, r3, r4, r5, r6 = curEventHooks(...)
         if r1 ~= nil then
             return r1, r2, r3, r4, r5, r6
         end
