@@ -1,7 +1,6 @@
 --[[
     Recursive hook library
-    Still breaks gmod (for now) since it doesnt support objects as an hook name,
-    but works faster than kent/dash/srlion in some (most (should be in any)) cases.
+    works faster than kent/dash/srlion in some (most (should be in any)) cases.
     Based on the tailcall optimization.
 ]]
 
@@ -60,6 +59,20 @@ local function remove(eventName, hookName)
 end
 
 local function add(eventName, hookName, func)
+    -- objects support
+    if not isstring(hookName) and IsValid(hookName) then
+        local strHookName = tostring(hookName)
+        local function wrappedFunc(...)
+            if IsValid(hookName) then
+                func(hookName, ...)
+            else
+                remove(eventName, strHookName)
+            end
+        end
+
+        return add(eventName, strHookName, wrappedFunc)
+    end
+
     attachFunctionToEvent(eventName, func)
 
     local curFunctions = hooksNormalTable[eventName]
