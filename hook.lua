@@ -29,33 +29,40 @@ local function createFunc(eventTable, name)
 			len = len + 1
 			tab[len] = v
 		end
-	end	
+	end
 
 
 	local gmFunc = (funcGM)[name]
 
 	if gmFunc then
 		return function(...)
-			for i = 1, len do
-				local a, b, c, d, e, f = tab[i](...)
+			local ln, i = len, 0
+			::start::
+			i = i + 1
 
-				if a ~= nil then
-					return a, b, c, d, e, f
-				end
+			local a, b, c, d, e, f = tab[i](...)
+
+			if a ~= nil then
+				return a, b, c, d, e, f
 			end
 
+			if i ~= ln then goto start end
 
 			return gmFunc(funcGM, ...)
 		end
 	else
 		return function(...)
-			for i = 1, len do
-				local a, b, c, d, e, f = tab[i](...)
+			local ln, i = len, 0
+			::start::
+			i = i + 1
 
-				if a ~= nil then
-					return a, b, c, d, e, f
-				end
+			local a, b, c, d, e, f = tab[i](...)
+
+			if a ~= nil then
+				return a, b, c, d, e, f
 			end
+
+			if i ~= ln then goto start end
 		end
 	end
 end
@@ -97,8 +104,6 @@ local function createRecursedFunc(eventTable, name)
 		start = 2
 	end
 
-
-
 	for i = start, len do
 		local oldFunc = newFunc
 		local func = tab[i]
@@ -119,7 +124,7 @@ local function createRecursedFunc(eventTable, name)
 end
 
 local function setHookFuncion(eventName, eventTable)
-	hooks[eventName] = (eventTable[0] == 1 and createSingleFunc or eventTable[0] <= 5 and createRecursedFunc or createFunc)(eventTable, eventName)
+	hooks[eventName] = (eventTable[0] == 1 and createSingleFunc or eventTable[0] > 7 and createRecursedFunc or createFunc)(eventTable, eventName)
 end
 
 function hook.GetTable()
@@ -152,6 +157,14 @@ function hook.Remove(eventName, name)
 end
 
 function hook.Call(eventName, gm, ...)
+	local func = hooks[eventName]
+
+	if func then
+		return func(...)
+	end
+end
+
+function hook.Run(eventName, ...)
 	local func = hooks[eventName]
 
 	if func then
