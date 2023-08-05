@@ -6,19 +6,26 @@
 	Cons:
 		Be extremely cautios of what you put as arguments. It doesn't have any tests cuz of performance reasons.
 		Do not try to change hook.GetTable() and hooks (except the hook that's called by now) themselves while in hook.Call.
+		second arg for hook.Call literally doesn't do anything. If your addon relies of using gamemode table argument for hook.Call, then i send you my regards.
+		It WILL likely (99%) break your gmod. You need to patch a lot of stuff to get it to work.
 	Pros:
-		Max performance.
+		Max performance as possible.
+		Literraly almost 0 overhead if hook has only 1 event.
+		By bytecode means, kent hook library has less bytecode per 'call' function, than DASH.
 
+	TODO:
+		Make hook priority like in srlion's lib (very easy tbh)
 
-	как работает для себя
-
+	CREDITS:
+		Made by kentovka team.
+			Jaff&Radon
 --]]
 
 local originalHooks = {}
 local hook = {}
 local hooks = {}
 
-local funcGM = GM or GAMEMODE
+local funcGM = GM or GAMEMODE or {}
 
 local function createFunc(eventTable, name)
 	local tab = {}
@@ -32,7 +39,7 @@ local function createFunc(eventTable, name)
 	end
 
 
-	local gmFunc = (funcGM)[name]
+	local gmFunc = funcGM[name]
 
 	if gmFunc then
 		return function(...)
@@ -123,8 +130,21 @@ local function createRecursedFunc(eventTable, name)
 	return newFunc
 end
 
+local function createGamemodeFunc(eventTable, eventName)
+	local gmFunc = funcGM[eventName]
+
+	if gmFunc then
+		return function(...)
+			return gmFunc(funcGM, ...)
+		end
+	end
+end
+
 local function setHookFuncion(eventName, eventTable)
-	hooks[eventName] = (eventTable[0] == 1 and createSingleFunc or eventTable[0] > 7 and createRecursedFunc or createFunc)(eventTable, eventName)
+	hooks[eventName] = ( (eventTable == nil or eventTable[0] == 0) and createGamemodeFunc or 
+		eventTable[0] == 1 and createSingleFunc or 
+		eventTable[0] < 4 and createRecursedFunc or 
+		createFunc)(eventTable, eventName)
 end
 
 function hook.GetTable()
@@ -150,13 +170,14 @@ end
 function hook.Remove(eventName, name)
 	local eventTable = originalHooks[eventName]
 
-	eventTable[name] = nil
-	eventTable[0] = eventTable[0] - 1
-
-	setHookFuncion(eventName, eventTable)
+	if eventTable and eventTable[name] then
+		eventTable[name] = nil
+		eventTable[0] = eventTable[0] - 1
+		setHookFuncion(eventName, eventTable)
+	end
 end
 
-function hook.Call(eventName, gm, ...)
+function hook.Call(eventName, _, ...)
 	local func = hooks[eventName]
 
 	if func then
@@ -172,4 +193,16 @@ function hook.Run(eventName, ...)
 	end
 end
 
-_G['hook2'] = hook
+
+hook.Add('PostGamemodeLoaded', 'Kent hook', function()
+	funcGM = GM or GAMEMODE
+	for k, v in pairs(funcGM) do
+		if isfunction(v) then
+			setHookFuncion(k)
+		end
+	end
+
+	hook.Remove("PostGamemodeLoaded", "Kent hook")
+end)
+
+_G['hook'] = hook
