@@ -104,9 +104,16 @@ local function createRecursedFunc(eventTable, name)
 		end
 	end
 
-	local newFunc = (funcGM)[name]
-	local start = 1
-	if newFunc == nil then
+	local newFunc, start
+	if funcGM[name] then
+		local gmFunc = funcGM[name]
+
+		newFunc = function(...)
+			return gmFunc(funcGM, ...)
+		end
+
+		start = 1
+	else
 		newFunc = tab[1]
 		start = 2
 	end
