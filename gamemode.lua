@@ -50,13 +50,6 @@ function gamemode.Register(tab, name, derived)
 	gamemodes[ name ] = tab
 
 	baseclass.Set( "gamemode_" .. name, tab )
-
-	-- At this moment hook library MUST be loaded, sooo
-	if callFunc == nil and hook.Call then
-		callFunc = hook.Call
-
-		gamemode.Call = call -- changing to more performance cooler func
-	end
 end
 
 function gamemode.Get(name)
@@ -69,10 +62,17 @@ local function call(name, ...)
 	return callFunc(name, currentGM, ...)
 end
 
-function gamemode.Call(name, ...)
+function gamemode.Call(name, ...) -- at first launch it basically same shit.
+	currentGM = gmod.GetGamemode()
+
+	if currentGM then -- but at second launch, it goes to hyper performance mode
+		callFunc = hook.Call -- by caching everything
+		gamemode.Call = call
+	end
+
 	if currentGM and currentGM[name] == nil then return false end
 
 	return hook.Call(name, currentGM, ...)
 end
 
-_G['gamemode2'] = gamemode
+_G['gamemode'] = gamemode
