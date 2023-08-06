@@ -14,7 +14,8 @@
 		By bytecode means, kent hook library has less bytecode per 'call' function, than DASH.
 
 	TODO:
-		Make hook priority like in srlion's lib (very easy tbh)
+		Make hook priority like in srlion's lib (very easy tbh) -- done
+		Test hook priority properly...
 
 	CREDITS:
 		Made by kentovka team.
@@ -22,22 +23,55 @@
 --]]
 
 local originalHooks = {}
-local hook = {}
+local hook = {
+	MONITOR_HIGH = 4,
+	HIGH = 3,
+	NORMAL = 2,
+	LOW = 1,
+	MONITOR_LOW = 0
+}
+
 local hooks = {}
 
 local funcGM = GM or GAMEMODE or {}
 
-local function createFunc(eventTable, name)
+local function getTable(eventTable)
 	local tab = {}
 	local len = 0
 
 	for k, v in pairs(eventTable) do
 		if k ~= 0 then
 			len = len + 1
-			tab[len] = v
+			if isfunction(v) then
+				tab[len] = v
+			else
+				tab[len] = v[1]
+			end
 		end
 	end
 
+	table.sort( tab, function(a, b)
+		local a1, b1
+		if isfunction(a) then
+			a1 = hook.NORMAL
+		else
+			a1 = a[2]
+		end
+
+		if isfunction(b) then
+			b1 = hook.NORMAL
+		else
+			b1 = a[2]
+		end
+
+		return a1 < b1
+	end)
+
+	return tab, len
+end
+
+local function createFunc(eventTable, name)
+	local tab, len = getTable(eventTable)
 
 	local gmFunc = funcGM[name]
 
@@ -76,6 +110,10 @@ end
 
 local function createSingleFunc(eventTable, name)
 	local _, func = next(eventTable, 0)
+	if istable(func) then
+		func = func[1]
+	end
+
 	local gmFunc = (funcGM)[name]
 
 	if gmFunc then
@@ -94,15 +132,7 @@ local function createSingleFunc(eventTable, name)
 end
 
 local function createRecursedFunc(eventTable, name)
-	local tab = {}
-	local len = 0
-
-	for k, v in pairs(eventTable) do
-		if k ~= 0 then
-			len = len + 1
-			tab[len] = v
-		end
-	end
+	local tab, len = getTable(eventTable)
 
 	local newFunc, start
 	if funcGM[name] then
@@ -155,10 +185,22 @@ local function setHookFuncion(eventName, eventTable)
 end
 
 function hook.GetTable()
-	return originalHooks
+	local tab = {}
+	for k, v in pairs(originalHooks) do
+		local subTab = {}
+		tab[k] = subTab
+		for k1, v1 in pairs(v) do
+			if istable(v1) then
+				subTab[k1] = v1[1]
+			elseif isfunction(v1) then
+				subTab[k1] = v1
+			end
+		end
+	end
+	return tab
 end
 
-function hook.Add(eventName, name, func)
+function hook.Add(eventName, name, func, priority)
 	local eventTable = originalHooks[eventName]
 	if eventTable == nil then
 		eventTable = {[0] = 0}
@@ -169,7 +211,11 @@ function hook.Add(eventName, name, func)
 		eventTable[0] = eventTable[0] + 1
 	end
 
-	eventTable[name] = func
+	if priority then
+		eventTable[name] = {func, priority}
+	else
+		eventTable[name] = func
+	end
 
 	setHookFuncion(eventName, eventTable)
 end
