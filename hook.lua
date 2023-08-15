@@ -7,7 +7,7 @@
 		Be extremely cautios of what you put as arguments. It doesn't have any tests cuz of performance reasons.
 		Do not try to change hook.GetTable() and hooks (except the hook that's called by now) themselves while in hook.Call.
 		second arg for hook.Call literally doesn't do anything. If your addon relies of using gamemode table argument for hook.Call, then i send you my regards.
-		It WILL likely (99%) break your gmod. You need to patch a lot of stuff to get it to work.
+		It WILL likely (98%) break your gmod. You need to patch a lot of stuff to get it to work.
 	Pros:
 		Max performance as possible.
 		Literraly almost 0 overhead if hook has only 1 event.
@@ -209,6 +209,14 @@ function hook.Add(eventName, name, func, priority)
 
 	if eventTable[name] == nil then
 		eventTable[0] = eventTable[0] + 1
+	end
+
+	if not isstring(name) and IsValid(name) then
+		local oldFunc = func
+		
+		func = function(...)
+			return oldFunc(name, ...)
+		end
 	end
 
 	if priority then
