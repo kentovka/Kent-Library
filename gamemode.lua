@@ -62,13 +62,15 @@ local function call(name, ...)
 	return callFunc(name, currentGM, ...)
 end
 
-function gamemode.Call(name, ...) -- at first launch it basically same shit.
+timer.Simple(1, function() -- very bad btw
+	callFunc = hook.Call
 	currentGM = gmod.GetGamemode()
 
-	if currentGM then -- but at second launch, it goes to hyper performance mode
-		callFunc = hook.Call -- by caching everything
-		gamemode.Call = call
-	end
+	gamemode.Call = call
+end)
+
+function gamemode.Call(name, ...) -- at first launch it basically same shit.
+	currentGM = gmod.GetGamemode()
 
 	if currentGM and currentGM[name] == nil then return false end
 
